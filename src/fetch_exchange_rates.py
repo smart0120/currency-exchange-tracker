@@ -1,7 +1,7 @@
 import requests
 import boto3
 from datetime import datetime
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree
 
 dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table('CurrencyExchangeRates')
@@ -27,7 +27,7 @@ def lambda_handler(event, context):
             )
 
 def parse_exchange_data(xml_data):
-    root = ET.fromstring(xml_data)
+    root = defusedxml.ElementTree.fromstring(xml_data)
     namespaces = {'ns': 'http://www.ecb.int/vocabulary/2002-08-01/eurofxref'}
     rates = {}
     
