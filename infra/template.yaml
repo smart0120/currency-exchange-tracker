@@ -1,0 +1,117 @@
+Resources:
+  # DynamoDB Table
+  CurrencyExchangeRatesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: CurrencyExchangeRates
+      AttributeDefinitions:
+        - AttributeName: currency
+          AttributeType: S
+        - AttributeName: date
+          AttributeType: S
+      KeySchema:
+        - AttributeName: currency
+          KeyType: HASH
+        - AttributeName: date
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+
+  # Lambda for fetching exchange rates
+  FetchExchangeRatesFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: FetchExchangeRates
+      Handler: fetch_exchange_rates.lambda_handler
+      Runtime: python3.9
+      CodeUri: src/
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref CurrencyExchangeRatesTable
+      Role: !GetAtt LambdaExecutionRole.Arn
+
+  # Lambda for handling API requests
+  ApiHandlerFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: ApiHandler
+      Handler: api_handler.lambda_handler
+      Runtime: python3.9
+      CodeUri: src/
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref CurrencyExchangeRatesTable
+      Role: !GetAtt LambdaExecutionRole.Arn
+
+  # API Gateway
+  ApiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: CurrencyExchangeApi
+      EndpointConfiguration:
+        Types: ["REGIONAL"]
+
+  ApiGatewayResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt ApiGateway.RootResourceId
+      PathPart: "rates"
+      RestApiId: !Ref ApiGateway
+
+  ApiGatewayMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: GET
+      ResourceId: !Ref ApiGatewayResource
+      RestApiId: !Ref ApiGateway
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiHandlerFunction.Arn}/invocations
+      AuthorizationType: NONE
+
+  # Lambda Execution Role
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CurrencyExchangeLambdaRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CurrencyExchangeDynamoDBPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                Resource: !GetAtt CurrencyExchangeRatesTable.Arn
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: arn:aws:logs:*:*:*
+
+  # CloudWatch Event Rule for Scheduling Lambda
+  FetchExchangeRatesRule:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: rate(1 day)
+      Targets:
+        - Arn: !GetAtt FetchExchangeRatesFunction.Arn
+          Id: "FetchExchangeRatesLambdaTarget"
+
+  # CloudWatch Event Permissions for Lambda
+  FetchExchangeRatesLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref FetchExchangeRatesFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt FetchExchangeRatesRule.Arn
