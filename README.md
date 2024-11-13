@@ -11,6 +11,7 @@ This application is a currency exchange rate tracker that fetches exchange rates
     aws cloudformation deploy --template-file infra/template.yaml --stack-name CurrencyExchangeTrackerStack --capabilities CAPABILITY_NAMED_IAM
     ```
 
+
 ## API Usage
 
 Once deployed, access the API at the endpoint provided by the API Gateway. The /rates endpoint provides:
@@ -19,16 +20,18 @@ Once deployed, access the API at the endpoint provided by the API Gateway. The /
 - Daily change in rates
 
 Example response:
-    ```
-    [
+
+```bash
+[
     {
         "currency": "USD",
         "rate": "1.1234",
         "change": "0.5"
     },
     ...
-    ]
-    ```
+]
+```
+
 
 ## Testing
 
