@@ -1,14 +1,14 @@
 import boto3
 from boto3.dynamodb.conditions import Key
 from decimal import Decimal
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-dynamodb = boto3.resource('dynamodb')
+dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 table = dynamodb.Table('CurrencyExchangeRates')
 
 def lambda_handler(event, context):
-    current_date = str(datetime.utcnow().date())
-    previous_date = str((datetime.utcnow() - timedelta(days=1)).date())
+    current_date = str(datetime.now(timezone.utc).date())
+    previous_date = str((datetime.now(timezone.utc) - timedelta(days=1)).date())
 
     current_rates = get_rates_by_date(current_date)
     previous_rates = get_rates_by_date(previous_date)

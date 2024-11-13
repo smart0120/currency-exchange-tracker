@@ -1,0 +1,40 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+env/
+venv/
+ENV/
+env.bak/
+*.egg-info/
+dist/
+build/
+pip-wheel-metadata/
+
+# AWS and boto3 configurations
+*.pem
+*.key
+
+# Local configuration files
+*.env
+.env.*
+
+# Flask instance folder
+instance/
+
+# pytest cache
+.cache/
+
+# IDEs and editors
+.vscode/
+.idea/
+
+# System files
+.DS_Store
+Thumbs.db
