@@ -9,7 +9,7 @@ table = dynamodb.Table('CurrencyExchangeRates')
 
 def lambda_handler(event, context):
     # Fetch data from ECB
-    response = requests.get('https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml')
+    response = requests.get('https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml', timeout=60)
     if response.status_code != 200:
         raise Exception("Failed to fetch data from ECB")
 
